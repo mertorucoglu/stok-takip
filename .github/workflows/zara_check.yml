@@ -2,13 +2,12 @@ name: Zara Stok Kontrol Projesi
 
 on:
   schedule:
-    # GitHub Cron UTC saatini kullanır. Bu komut "Her 10 dakikada bir çalıştır" demektir.
+    # Her 10 dakikada bir otomatik çalışır (UTC saatine göre)
     - cron: '*/10 * * * *'
-  workflow_dispatch: # İstediğin zaman elle (manuel) başlatabilmen için buton ekler
+  workflow_dispatch: # Elle başlatma butonunu aktif eder
 
 jobs:
   zara-kontrol:
-    runs-down: ubuntu-latest
     runs-on: ubuntu-latest
 
     steps:
@@ -32,7 +31,6 @@ jobs:
 
     - name: Botu Ateşle
       env:
-        # Az önce Secrets'a eklediğimiz şifreleri sunucuya tanıtıyoruz
         TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
         CHAT_ID: ${{ secrets.CHAT_ID }}
       run: python zara_bot.py
