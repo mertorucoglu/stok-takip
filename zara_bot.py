@@ -88,7 +88,13 @@ def botu_baslat():
     print("Zara gizli modda kontrol ediliyor...")
     try:
         driver.get(ZARA_URL)
-        time.sleep(7) # Sayfanın oturması için biraz süre tanıyoruz
+        time.sleep(7) # Sayfanın oturması için süre
+
+        # 🕵️ DEDEKTİF MODU: Bot şu an nerede ve ne görüyor?
+        print("--- DEDEKTİF BİLGİLERİ ---")
+        print(f"Gittiği URL: {driver.current_url}")
+        print(f"Sayfa Başlığı: {driver.title}")
+        print("--------------------------")
 
         sonuc = l_bedeni_kontrol_et(driver)
 
@@ -106,6 +112,3 @@ def botu_baslat():
         print(f"Sistem Hatası: {e}")
     finally:
         driver.quit()
-
-if __name__ == "__main__":
-    botu_baslat()
