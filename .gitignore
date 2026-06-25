@@ -1,0 +1,16 @@
+# Python geçici dosyaları
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+.env
+
+# Geliştirici araçları ve sistem dosyaları
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
