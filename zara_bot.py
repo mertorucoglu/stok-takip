@@ -11,7 +11,9 @@ from webdriver_manager.chrome import ChromeDriverManager
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
 ZARA_URL = "https://www.zara.com/tr/tr/regular-fit-dokulu-polo-t-shirt-p00526447.html?v1=511360252&v2=2415619"
-HEDEF_BEDEN = "L (US L)"
+
+# Arkadaşının dediği gibi burayı sadeleştirdik, artık sadece temiz harfe bakıyoruz
+HEDEF_BEDEN = "L" 
 
 def telegram_mesaj_gonder(mesaj):
     if not TELEGRAM_TOKEN or not CHAT_ID:
@@ -26,7 +28,6 @@ def telegram_mesaj_gonder(mesaj):
 
 def driver_olustur():
     chrome_options = Options()
-    # GitHub Actions ortamı için bu argümanlar ZORUNLUDUR, yoksa tarayıcı crash verir
     chrome_options.add_argument("--headless=new")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
@@ -52,31 +53,32 @@ def popup_kapat(driver):
 
 def l_bedeni_kontrol_et(driver):
     try:
-        # Önce L beden elementini buluyoruz
-        l_elementi = driver.find_element(By.XPATH, f"//*[contains(text(), '{HEDEF_BEDEN}')]")
+        # Tüm beden li'lerini CSS Selector ile topluyoruz (Arkadaşının önerisi)
+        bedenler = driver.find_elements(By.CSS_SELECTOR, "li.size-selector-sizes-size")
         
-        # L bedenin içinde bulunduğu buton veya liste elemanını (parent/ancestor) buluyoruz
-        satir = l_elementi.find_element(By.XPATH, "./ancestor::*[self::li or self::button or self::div][1]")
+        for beden in bedenler:
+            try:
+                label = beden.find_element(By.CSS_SELECTOR, ".size-selector-sizes-size__label")
+                metin = label.text.strip()
+                
+                # Sadece hedef beden harfine eşit mi (Örn: metin "L" veya "L (US L)" ise "L" kısmını yakalar)
+                if metin == HEDEF_BEDEN or metin.startswith(f"{HEDEF_BEDEN} "):
+                    class_ozelligi = beden.get_attribute("class") or ""
+                    print(f"{HEDEF_BEDEN} beden bulundu. Class: {class_ozelligi!r}")
+                    
+                    # Zara'nın gerçek stok yok class'larını avlıyoruz
+                    if "--disabled" in class_ozelligi or "--unavailable" in class_ozelligi:
+                        return False # Stok yok
+                    return True # Stok VAR!
+            except Exception:
+                continue
         
-        # HTML kodundaki sınıfları (class) ve disabled durumunu kontrol ediyoruz
-        class_ozelligi = satir.get_attribute("class") or ""
-        is_disabled = satir.get_attribute("disabled")
+        print(f"{HEDEF_BEDEN} beden hiç bulunamadı (liste içinde yok).")
+        return None
         
-        print(f"L beden class içeriği: {class_ozelligi!r}, Disabled mı: {is_disabled}")
-
-        # Eğer element disabled ise veya class içinde 'out-of-stock' / 'disabled' geçiyorsa stok yoktur
-        if is_disabled or "out-of-stock" in class_ozelligi.lower() or "disabled" in class_ozelligi.lower():
-            return False
-            
-        # Ekstra garanti: Satır metninde "Benzer" veya "Tükendi" geçiyorsa yine stok yoktur
-        satir_metni = satir.text
-        if "Benzer" in satir_metni or "Tükendi" in satir_metni:
-            return False
-            
-        return True  
     except Exception as e:
-        print(f"L beden satırı okunamadı: {e}")
-        return None 
+        print(f"Beden kontrolü sırasında hata: {e}")
+        return None
 
 def botu_baslat():
     driver = driver_olustur()
@@ -84,7 +86,7 @@ def botu_baslat():
     
     try:
         driver.get(ZARA_URL)
-        time.sleep(7)  # GitHub sunucuları biraz yavaş olabilir, süreyi azıcık artırdık
+        time.sleep(7)
         popup_kapat(driver)
 
         sonuc = l_bedeni_kontrol_et(driver)
@@ -94,7 +96,6 @@ def botu_baslat():
             telegram_mesaj_gonder(f"📣 AGA KOŞ L BEDEN STOĞA GİRDİ! \nLink: {ZARA_URL}")
         elif sonuc is False:
             print("L beden hâlâ stokta yok.")
-            # Her tura rapor vermesi için eklenen garanti bildirim
             telegram_mesaj_gonder("🚀 Zara Stok Kontrolü Yapıldı: L beden hâlâ stokta yok, nöbetteyim aga!")
         else:
             print("Sayfa yapısı tam yüklenemedi.")
