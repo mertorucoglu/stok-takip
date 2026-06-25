@@ -112,3 +112,6 @@ def botu_baslat():
         print(f"Sistem Hatası: {e}")
     finally:
         driver.quit()
+
+if __name__ == "__main__":
+    botu_baslat()
