@@ -4,6 +4,7 @@ import requests
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+import subprocess
 import undetected_chromedriver as uc
 
 # --- BİLGİLERİ GİTHUB SECRETS'TAN ÇEKİYORUZ ---
@@ -23,6 +24,7 @@ def telegram_mesaj_gonder(mesaj):
     except Exception as e:
         print(f"Telegram hatası: {e}")
 
+
 def driver_olustur():
     options = uc.ChromeOptions()
     options.add_argument("--headless=new")
@@ -30,11 +32,20 @@ def driver_olustur():
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
-    # Gerçekçi bir insan profil süsü veriyoruz
     options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
     
-    # Undetected chromedriver otomatik olarak sürücüyü indirir ve gizler
-    return uc.Chrome(options=options)
+    # GitHub Actions'taki Chrome sürümünü otomatik buluyoruz
+    try:
+        c_version = subprocess.check_output(['google-chrome', '--version']).decode('utf-8')
+        # Örn çıktı: "Google Chrome 149.0.7827.0" -> Buradan 149 sayısını çekiyoruz
+        ana_surum = int(c_version.split()[2].split('.')[0])
+        print(f"Sistemdeki Chrome Sürümü: {ana_surum} tespit edildi. Eşleşen sürücü indiriliyor...")
+    except Exception as e:
+        print("Chrome sürümü okunamadı, varsayılan 149 kullanılıyor.")
+        ana_surum = 149
+
+    # version_main parametresi ile birebir uyumlu sürümü zorluyoruz
+    return uc.Chrome(options=options, version_main=ana_surum)
 
 def l_bedeni_kontrol_et(driver):
     try:
