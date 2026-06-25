@@ -26,6 +26,7 @@ def telegram_mesaj_gonder(mesaj):
 
 def driver_olustur():
     chrome_options = Options()
+    # GitHub Actions ortamı için bu argümanlar ZORUNLUDUR, yoksa tarayıcı crash verir
     chrome_options.add_argument("--headless=new")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
@@ -51,17 +52,31 @@ def popup_kapat(driver):
 
 def l_bedeni_kontrol_et(driver):
     try:
+        # Önce L beden elementini buluyoruz
         l_elementi = driver.find_element(By.XPATH, f"//*[contains(text(), '{HEDEF_BEDEN}')]")
-        satir = l_elementi.find_element(By.XPATH, "./ancestor::*[self::li or self::div][1]")
-        satir_metni = satir.text
-        print(f"L beden satırı metni: {satir_metni!r}")
+        
+        # L bedenin içinde bulunduğu buton veya liste elemanını (parent/ancestor) buluyoruz
+        satir = l_elementi.find_element(By.XPATH, "./ancestor::*[self::li or self::button or self::div][1]")
+        
+        # HTML kodundaki sınıfları (class) ve disabled durumunu kontrol ediyoruz
+        class_ozelligi = satir.get_attribute("class") or ""
+        is_disabled = satir.get_attribute("disabled")
+        
+        print(f"L beden class içeriği: {class_ozelligi!r}, Disabled mı: {is_disabled}")
 
-        if "Benzer ürünler" in satir_metni:
+        # Eğer element disabled ise veya class içinde 'out-of-stock' / 'disabled' geçiyorsa stok yoktur
+        if is_disabled or "out-of-stock" in class_ozelligi.lower() or "disabled" in class_ozelligi.lower():
             return False
+            
+        # Ekstra garanti: Satır metninde "Benzer" veya "Tükendi" geçiyorsa yine stok yoktur
+        satir_metni = satir.text
+        if "Benzer" in satir_metni or "Tükendi" in satir_metni:
+            return False
+            
         return True  
     except Exception as e:
         print(f"L beden satırı okunamadı: {e}")
-        return None  
+        return None 
 
 def botu_baslat():
     driver = driver_olustur()
@@ -69,7 +84,7 @@ def botu_baslat():
     
     try:
         driver.get(ZARA_URL)
-        time.sleep(7)
+        time.sleep(7)  # GitHub sunucuları biraz yavaş olabilir, süreyi azıcık artırdık
         popup_kapat(driver)
 
         sonuc = l_bedeni_kontrol_et(driver)
@@ -79,7 +94,7 @@ def botu_baslat():
             telegram_mesaj_gonder(f"📣 AGA KOŞ L BEDEN STOĞA GİRDİ! \nLink: {ZARA_URL}")
         elif sonuc is False:
             print("L beden hâlâ stokta yok.")
-            # --- HER SEFERİNDE RAPOR VERMESİ İÇİN BU SATIRI EKLEDİK ---
+            # Her tura rapor vermesi için eklenen garanti bildirim
             telegram_mesaj_gonder("🚀 Zara Stok Kontrolü Yapıldı: L beden hâlâ stokta yok, nöbetteyim aga!")
         else:
             print("Sayfa yapısı tam yüklenemedi.")
