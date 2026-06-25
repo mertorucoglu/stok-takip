@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Python geçici dosyaları
 __pycache__/
 *.pyc
@@ -15,21 +14,3 @@ ENV/
 .idea/
 .DS_Store
 Thumbs.db
-=======
-# Python geçici dosyaları
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-env/
-venv/
-ENV/
-.env
-
-# Geliştirici araçları ve sistem dosyaları
-.vscode/
-.idea/
-.DS_Store
-Thumbs.db
->>>>>>> e07fd1b (iç içe fonksiyon hatası düzeltildi ve raporlama eklendi)
